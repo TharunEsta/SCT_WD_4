@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do List App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #e3f2fd, #f1f8e9);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 700px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 16px;
+    }
+
+    input[type="text"], input[type="datetime-local"] {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .task {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 0;
+    }
+
+    .task.completed span {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .task small {
+      display: block;
+      color: #666;
+      font-size: 13px;
+    }
+
+    .task-actions button {
+      margin-left: 5px;
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+
+    .edit {
+      background-color: #ffc107;
+      color: #000;
+    }
+
+    .delete {
+      background-color: #dc3545;
+    }
+
+    .list-title {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #444;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 4px;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>📝 My To-Do List</h2>
+
+  <input type="text" id="taskInput" placeholder="Enter task...">
+  <input type="datetime-local" id="taskDateTime">
+  <input type="text" id="taskList" placeholder="Category (Work, Personal, etc.)">
+  <button onclick="addTask()">Add Task</button>
+
+  <div id="taskContainer"></div>
+</div>
+
+<script>
+  let tasks = [];
+
+  // Define keywords and related image URLs
+  const keywordImages = {
+    meeting: "https://img.icons8.com/ios-filled/50/meeting.png",
+    workout: "https://img.icons8.com/ios-filled/50/dumbbell.png",
+    shopping: "https://img.icons8.com/ios-filled/50/shopping-cart.png",
+    birthday: "https://img.icons8.com/ios-filled/50/birthday-cake.png",
+    study: "https://img.icons8.com/ios-filled/50/books.png",
+    clean: "https://img.icons8.com/ios-filled/50/broom.png",
+    email: "https://img.icons8.com/ios-filled/50/email.png",
+    call: "https://img.icons8.com/ios-filled/50/phone.png",
+    default: "https://img.icons8.com/ios-filled/50/task.png"
+  };
+
+  function getTaskImage(text) {
+    text = text.toLowerCase();
+    for (const key in keywordImages) {
+      if (text.includes(key)) return keywordImages[key];
+    }
+    return keywordImages.default;
+  }
+
+  function renderTasks() {
+    const container = document.getElementById("taskContainer");
+    container.innerHTML = "";
+
+    const grouped = {};
+
+    tasks.forEach(task => {
+      if (!grouped[task.list]) grouped[task.list] = [];
+      grouped[task.list].push(task);
+    });
+
+    for (const list in grouped) {
+      container.innerHTML += `<div class="list-title">${list}</div>`;
+      grouped[list].forEach((task) => {
+        const imageSrc = getTaskImage(task.text);
+        container.innerHTML += `
+          <div class="task ${task.completed ? 'completed' : ''}">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="${imageSrc}" alt="icon" width="30">
+              <div>
+                <input type="checkbox" onchange="toggleComplete(${task.id})" ${task.completed ? 'checked' : ''}>
+                <span>${task.text}</span>
+                <small>${task.datetime}</small>
+              </div>
+            </div>
+            <div class="task-actions">
+              <button class="edit" onclick="editTask(${task.id})">Edit</button>
+              <button class="delete" onclick="deleteTask(${task.id})">Delete</button>
+            </div>
+          </div>
+        `;
+      });
+    }
+  }
+
+  function addTask() {
+    const text = document.getElementById("taskInput").value.trim();
+    const datetime = document.getElementById("taskDateTime").value;
+    const list = document.getElementById("taskList").value.trim() || "General";
+
+    if (!text || !datetime) {
+      alert("Please provide task and date/time.");
+      return;
+    }
+
+    const task = {
+      id: Date.now(),
+      text,
+      datetime,
+      list,
+      completed: false
+    };
+
+    tasks.push(task);
+    clearInputs();
+    renderTasks();
+  }
+
+  function toggleComplete(id) {
+    tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+    renderTasks();
+  }
+
+  function deleteTask(id) {
+    if (confirm("Delete this task?")) {
+      tasks = tasks.filter(task => task.id !== id);
+      renderTasks();
+    }
+  }
+
+  function editTask(id) {
+    const task = tasks.find(t => t.id === id);
+    const newText = prompt("Edit task text:", task.text);
+    const newDate = prompt("Edit date/time:", task.datetime);
+    const newList = prompt("Edit list/category:", task.list);
+
+    if (newText && newDate && newList) {
+      task.text = newText.trim();
+      task.datetime = newDate.trim();
+      task.list = newList.trim();
+      renderTasks();
+    }
+  }
+
+  function clearInputs() {
+    document.getElementById("taskInput").value = "";
+    document.getElementById("taskDateTime").value = "";
+    document.getElementById("taskList").value = "";
+  }
+
+  renderTasks();
+</script>
+
+</body>
+</html>
+
